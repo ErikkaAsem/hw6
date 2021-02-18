@@ -10,14 +10,25 @@
 // Note: image data returned by the API will only give you the filename;
 // prepend with `https://image.tmdb.org/t/p/w500/` to get the 
 // complete image URL
-
 window.addEventListener('DOMContentLoaded', async function(event) {
   // Step 1: Construct a URL to get movies playing now from TMDB, fetch
   // data and put the Array of movie Objects in a variable called
-  // movies. Write the contents of this array to the JavaScript
+  // movies.  
+  // Write the contents of this array to the JavaScript
   // console to ensure you've got good data
   // ⬇️ ⬇️ ⬇️
 
+
+let response = await fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=8a4586e6be239f4d679998bf0d1c984d&language=en-US`)
+let json = await response.json()
+// console.log(json)
+let movies = json.results
+// console.log(movies)
+let db = firebase.firestore()
+let WatchedSnapshot = await db.collection('Watched').get()
+// console.log(WatchedSnapshot)
+
+let WatchedMovies = WatchedSnapshot.docs
   // ⬆️ ⬆️ ⬆️ 
   // End Step 1
   
@@ -34,6 +45,39 @@ window.addEventListener('DOMContentLoaded', async function(event) {
   // </div>
   // ⬇️ ⬇️ ⬇️
 
+  for (let i=0; i<movies.length; i++){
+    let movie = movies[i]
+    let movieId = movie.id
+    // console.log(movie)
+    let dbMovie = await db.collection('Watched').doc(`${movieId}`).get()
+    let dbMovieData = dbMovie.data()
+    
+    let movieDOMElement= document.querySelector('.movies')
+    let posterPath = movie.poster_path
+    movieDOMElement.insertAdjacentHTML("beforeend", `
+    <div class="w-1/5 p-4 movie-${movieId}">
+    <img src="https://image.tmdb.org/t/p/w500${posterPath}" class="w-full">
+    <a href="#" class="watched-button block text-center text-white bg-green-500 mt-4 px-4 py-2 rounded">I've watched this!</a>
+    </div
+    >
+    `)
+
+    if (dbMovieData){
+    let movieView = document.querySelector(`.movie-${movieId}`)
+    movieView.classList.add('opacity-20')
+    }
+    
+    let watchedButton = document.querySelector(`.movie-${movieId}`)
+    watchedButton.addEventListener(`click`, async function(event){
+      event.preventDefault()
+      let movieView = document.querySelector(`.movie-${movieId}`)
+      // console.log(movieView)
+      movieView.classList.add('opacity-20')
+      await db.collection('Watched').doc(`${movieId}`).set({ })
+    })
+
+  }
+
   // ⬆️ ⬆️ ⬆️ 
   // End Step 2
 
@@ -48,6 +92,10 @@ window.addEventListener('DOMContentLoaded', async function(event) {
   //   the movie is watched. Use .classList.remove('opacity-20')
   //   to remove the class if the element already contains it.
   // ⬇️ ⬇️ ⬇️
+
+
+
+
 
   // ⬆️ ⬆️ ⬆️ 
   // End Step 3
@@ -69,4 +117,11 @@ window.addEventListener('DOMContentLoaded', async function(event) {
   //   database.
   // - Hint: you can use if (document) with no comparison
   //   operator to test for the existence of an object.
+
+
+  // if (todoText.length > 0) {
+  //   let docRef = await db.collection('todos').add({
+  //     text: todoText
+  //   })
+
 })
